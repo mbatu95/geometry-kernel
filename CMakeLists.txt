@@ -19,8 +19,14 @@ endif()
 
 include(CTest)
 
-add_executable(matrix_example examples/vector_example.cpp)
+add_executable(vector_example examples/vector_example.cpp)
+target_link_libraries(vector_example PRIVATE geometry::geometry_kernel)
+
+add_executable(matrix_example examples/matrix_example.cpp)
 target_link_libraries(matrix_example PRIVATE geometry::geometry_kernel)
+
+add_executable(transform_example examples/transform_example.cpp)
+target_link_libraries(transform_example PRIVATE geometry::geometry_kernel)
 
 if(BUILD_TESTING)
     add_executable(geometry_kernel_tests tests/test_vectors.cpp)
@@ -30,4 +36,8 @@ if(BUILD_TESTING)
     add_executable(geometry_kernel_matrix_tests tests/test_matrices.cpp)
     target_link_libraries(geometry_kernel_matrix_tests PRIVATE geometry::geometry_kernel)
     add_test(NAME geometry_kernel_matrix_tests COMMAND geometry_kernel_matrix_tests)
+
+    add_executable(geometry_kernel_transform_tests tests/test_transforms.cpp)
+    target_link_libraries(geometry_kernel_transform_tests PRIVATE geometry::geometry_kernel)
+    add_test(NAME geometry_kernel_transform_tests COMMAND geometry_kernel_transform_tests)
 endif()
