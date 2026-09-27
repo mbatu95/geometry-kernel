@@ -40,6 +40,9 @@ target_link_libraries(ray_aabb_example PRIVATE geometry::geometry_kernel)
 add_executable(mesh_example examples/mesh_example.cpp)
 target_link_libraries(mesh_example PRIVATE geometry::geometry_kernel)
 
+add_executable(primitives_example examples/primitives_example.cpp)
+target_link_libraries(primitives_example PRIVATE geometry::geometry_kernel)
+
 if(BUILD_TESTING)
     add_executable(geometry_kernel_tests tests/test_vectors.cpp)
     target_link_libraries(geometry_kernel_tests PRIVATE geometry::geometry_kernel)
@@ -68,4 +71,8 @@ if(BUILD_TESTING)
     add_executable(geometry_kernel_mesh_tests tests/test_mesh.cpp)
     target_link_libraries(geometry_kernel_mesh_tests PRIVATE geometry::geometry_kernel)
     add_test(NAME geometry_kernel_mesh_tests COMMAND geometry_kernel_mesh_tests)
+
+    add_executable(geometry_kernel_primitive_tests tests/test_primitives.cpp)
+    target_link_libraries(geometry_kernel_primitive_tests PRIVATE geometry::geometry_kernel)
+    add_test(NAME geometry_kernel_primitive_tests COMMAND geometry_kernel_primitive_tests)
 endif()
