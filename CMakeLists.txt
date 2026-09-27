@@ -28,6 +28,9 @@ target_link_libraries(matrix_example PRIVATE geometry::geometry_kernel)
 add_executable(transform_example examples/transform_example.cpp)
 target_link_libraries(transform_example PRIVATE geometry::geometry_kernel)
 
+add_executable(ray_plane_example examples/ray_plane_example.cpp)
+target_link_libraries(ray_plane_example PRIVATE geometry::geometry_kernel)
+
 if(BUILD_TESTING)
     add_executable(geometry_kernel_tests tests/test_vectors.cpp)
     target_link_libraries(geometry_kernel_tests PRIVATE geometry::geometry_kernel)
@@ -40,4 +43,8 @@ if(BUILD_TESTING)
     add_executable(geometry_kernel_transform_tests tests/test_transforms.cpp)
     target_link_libraries(geometry_kernel_transform_tests PRIVATE geometry::geometry_kernel)
     add_test(NAME geometry_kernel_transform_tests COMMAND geometry_kernel_transform_tests)
+
+    add_executable(geometry_kernel_ray_plane_tests tests/test_ray_plane.cpp)
+    target_link_libraries(geometry_kernel_ray_plane_tests PRIVATE geometry::geometry_kernel)
+    add_test(NAME geometry_kernel_ray_plane_tests COMMAND geometry_kernel_ray_plane_tests)
 endif()
