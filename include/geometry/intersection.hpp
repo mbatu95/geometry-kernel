@@ -1,10 +1,12 @@
 #pragma once
 
+#include "geometry/aabb.hpp"
 #include "geometry/plane.hpp"
 #include "geometry/ray.hpp"
 #include "geometry/triangle.hpp"
 
 #include <cmath>
+#include <limits>
 #include <optional>
 
 namespace geometry {
@@ -21,6 +23,66 @@ struct RayTriangleIntersection {
     double u;
     double v;
 };
+
+struct RayAABBIntersection {
+    // Ray parameters for the first and last box contacts; t_enter is zero when
+    // the ray origin is inside the box.
+    double t_enter;
+    double t_exit;
+    Point3 enter_point;
+    Point3 exit_point;
+};
+
+[[nodiscard]] inline std::optional<RayAABBIntersection> intersect(
+    const Ray& ray, const AABB& box) {
+    const Point3& origin = ray.origin();
+    const Vec3& direction = ray.direction();
+    const Point3& minimum = box.min();
+    const Point3& maximum = box.max();
+    const double origins[] = {origin.x, origin.y, origin.z};
+    const double directions[] = {direction.x, direction.y, direction.z};
+    const double minima[] = {minimum.x, minimum.y, minimum.z};
+    const double maxima[] = {maximum.x, maximum.y, maximum.z};
+
+    double t_enter = -std::numeric_limits<double>::infinity();
+    double t_exit = std::numeric_limits<double>::infinity();
+    constexpr double interval_epsilon = 1e-12;
+
+    for (int axis = 0; axis < 3; ++axis) {
+        if (directions[axis] == 0.0) {
+            if (origins[axis] < minima[axis] || origins[axis] > maxima[axis]) {
+                return std::nullopt;
+            }
+            continue;
+        }
+
+        double axis_enter = (minima[axis] - origins[axis]) / directions[axis];
+        double axis_exit = (maxima[axis] - origins[axis]) / directions[axis];
+        if (axis_enter > axis_exit) {
+            std::swap(axis_enter, axis_exit);
+        }
+        t_enter = std::max(t_enter, axis_enter);
+        t_exit = std::min(t_exit, axis_exit);
+
+        const double interval_scale = std::max({1.0, std::abs(t_enter), std::abs(t_exit)});
+        if (t_enter > t_exit + interval_epsilon * interval_scale) {
+            return std::nullopt;
+        }
+    }
+
+    if (t_exit < 0.0) {
+        return std::nullopt;
+    }
+    if (t_enter > t_exit) {
+        const double contact = t_enter + (t_exit - t_enter) * 0.5;
+        t_enter = contact;
+        t_exit = contact;
+    }
+
+    t_enter = std::max(t_enter, 0.0);
+    return RayAABBIntersection{
+        t_enter, t_exit, ray.point_at(t_enter), ray.point_at(t_exit)};
+}
 
 [[nodiscard]] inline std::optional<RayPlaneIntersection> intersect(
     const Ray& ray, const Plane& plane) {

@@ -34,6 +34,9 @@ target_link_libraries(ray_plane_example PRIVATE geometry::geometry_kernel)
 add_executable(ray_triangle_example examples/ray_triangle_example.cpp)
 target_link_libraries(ray_triangle_example PRIVATE geometry::geometry_kernel)
 
+add_executable(ray_aabb_example examples/ray_aabb_example.cpp)
+target_link_libraries(ray_aabb_example PRIVATE geometry::geometry_kernel)
+
 if(BUILD_TESTING)
     add_executable(geometry_kernel_tests tests/test_vectors.cpp)
     target_link_libraries(geometry_kernel_tests PRIVATE geometry::geometry_kernel)
@@ -54,4 +57,8 @@ if(BUILD_TESTING)
     add_executable(geometry_kernel_triangle_tests tests/test_triangle.cpp)
     target_link_libraries(geometry_kernel_triangle_tests PRIVATE geometry::geometry_kernel)
     add_test(NAME geometry_kernel_triangle_tests COMMAND geometry_kernel_triangle_tests)
+
+    add_executable(geometry_kernel_aabb_tests tests/test_aabb.cpp)
+    target_link_libraries(geometry_kernel_aabb_tests PRIVATE geometry::geometry_kernel)
+    add_test(NAME geometry_kernel_aabb_tests COMMAND geometry_kernel_aabb_tests)
 endif()
