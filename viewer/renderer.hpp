@@ -2,6 +2,7 @@
 
 #include "geometry/mat4.hpp"
 #include "geometry/mesh.hpp"
+#include "scene/scene.hpp"
 #include "viewer/shader.hpp"
 
 #include <array>
@@ -9,6 +10,11 @@
 #include <vector>
 
 namespace viewer {
+
+struct SceneRenderStyle {
+    std::array<float, 3> color;
+    bool wireframe;
+};
 
 class Renderer {
 public:
@@ -18,11 +24,11 @@ public:
     Renderer(const Renderer&) = delete;
     Renderer& operator=(const Renderer&) = delete;
 
-    [[nodiscard]] std::size_t upload(const geometry::Mesh& mesh);
+    [[nodiscard]] std::vector<std::size_t> upload_scene(const scene::Scene& scene);
     void begin_frame() const;
-    void draw(std::size_t mesh_id, const geometry::Mat4& model,
-              const geometry::Mat4& view, const geometry::Mat4& projection,
-              const std::array<float, 3>& color, bool wireframe) const;
+    void draw_scene(const scene::Scene& scene, const std::vector<std::size_t>& mesh_ids,
+                    const std::vector<SceneRenderStyle>& styles,
+                    const geometry::Mat4& view, const geometry::Mat4& projection) const;
 
 private:
     struct GpuMesh {
@@ -38,6 +44,11 @@ private:
         GpuMesh(GpuMesh&& other) noexcept;
         GpuMesh& operator=(GpuMesh&& other) noexcept;
     };
+
+    [[nodiscard]] std::size_t upload_mesh(const geometry::Mesh& mesh);
+    void draw_mesh(std::size_t mesh_id, const geometry::Mat4& model,
+                   const geometry::Mat4& view, const geometry::Mat4& projection,
+                   const SceneRenderStyle& style) const;
 
     Shader shader_;
     GLint model_location_{-1};

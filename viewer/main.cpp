@@ -3,6 +3,7 @@
 
 #include "geometry/primitives.hpp"
 #include "geometry/transform.hpp"
+#include "scene/scene.hpp"
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -102,20 +103,24 @@ int main() {
         framebuffer_size_callback(window, framebuffer_width, framebuffer_height);
 
         {
+            scene::Scene world;
+            world.add(scene::SceneObject{
+                "ground", geometry::make_xy_grid(10.0, 10.0, 10, 10)});
+            world.add(scene::SceneObject{
+                "box", geometry::make_box(1.0, 1.0, 1.0),
+                geometry::Transform::translation(0.0, 0.0, 0.5)});
+
             viewer::Renderer renderer;
-            const geometry::Mesh ground = geometry::make_xy_grid(10.0, 10.0, 10, 10);
-            const geometry::Mesh box = geometry::make_box(1.0, 1.0, 1.0).transformed(
-                geometry::Transform::translation(0.0, 0.0, 0.5));
-            const std::size_t ground_id = renderer.upload(ground);
-            const std::size_t box_id = renderer.upload(box);
-            const geometry::Mat4 identity = geometry::Mat4::identity();
+            const std::vector<std::size_t> mesh_ids = renderer.upload_scene(world);
+            const std::vector<viewer::SceneRenderStyle> styles{
+                {{0.55F, 0.62F, 0.68F}, true},
+                {{0.86F, 0.43F, 0.24F}, false},
+            };
 
             while (glfwWindowShouldClose(window) == GLFW_FALSE) {
                 renderer.begin_frame();
-                renderer.draw(ground_id, identity, camera.view_matrix(),
-                              camera.projection_matrix(), {0.55F, 0.62F, 0.68F}, true);
-                renderer.draw(box_id, identity, camera.view_matrix(),
-                              camera.projection_matrix(), {0.86F, 0.43F, 0.24F}, false);
+                renderer.draw_scene(world, mesh_ids, styles, camera.view_matrix(),
+                                    camera.projection_matrix());
                 glfwSwapBuffers(window);
                 glfwPollEvents();
             }

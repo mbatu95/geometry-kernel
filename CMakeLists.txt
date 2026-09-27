@@ -15,6 +15,10 @@ target_include_directories(geometry_kernel INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
+add_library(geometry_scene INTERFACE)
+add_library(scene::scene ALIAS geometry_scene)
+target_link_libraries(geometry_scene INTERFACE geometry::geometry_kernel)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -77,6 +81,10 @@ if(BUILD_TESTING)
     add_executable(geometry_kernel_primitive_tests tests/test_primitives.cpp)
     target_link_libraries(geometry_kernel_primitive_tests PRIVATE geometry::geometry_kernel)
     add_test(NAME geometry_kernel_primitive_tests COMMAND geometry_kernel_primitive_tests)
+
+    add_executable(geometry_scene_tests tests/test_scene.cpp)
+    target_link_libraries(geometry_scene_tests PRIVATE scene::scene)
+    add_test(NAME geometry_scene_tests COMMAND geometry_scene_tests)
 endif()
 
 if(GEOMETRY_KERNEL_BUILD_VIEWER)
@@ -100,6 +108,7 @@ if(GEOMETRY_KERNEL_BUILD_VIEWER)
     target_include_directories(geometry_viewer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(geometry_viewer PRIVATE
         geometry::geometry_kernel
+        scene::scene
         ${GEOMETRY_KERNEL_GLFW_TARGET}
         OpenGL::GL
     )

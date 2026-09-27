@@ -82,7 +82,7 @@ Renderer::Renderer()
     glEnable(GL_DEPTH_TEST);
 }
 
-std::size_t Renderer::upload(const geometry::Mesh& mesh) {
+std::size_t Renderer::upload_mesh(const geometry::Mesh& mesh) {
     if (mesh.triangle_count() >
         static_cast<std::size_t>(std::numeric_limits<GLsizei>::max()) / 3) {
         throw std::length_error("Mesh has too many indices for OpenGL draw call");
@@ -128,14 +128,23 @@ std::size_t Renderer::upload(const geometry::Mesh& mesh) {
     return meshes_.size() - 1;
 }
 
+std::vector<std::size_t> Renderer::upload_scene(const scene::Scene& scene) {
+    std::vector<std::size_t> mesh_ids;
+    mesh_ids.reserve(scene.size());
+    for (const scene::SceneObject& object : scene) {
+        mesh_ids.push_back(upload_mesh(object.mesh()));
+    }
+    return mesh_ids;
+}
+
 void Renderer::begin_frame() const {
     glClearColor(0.16F, 0.18F, 0.21F, 1.0F);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void Renderer::draw(std::size_t mesh_id, const geometry::Mat4& model,
-                    const geometry::Mat4& view, const geometry::Mat4& projection,
-                    const std::array<float, 3>& color, bool wireframe) const {
+void Renderer::draw_mesh(std::size_t mesh_id, const geometry::Mat4& model,
+                         const geometry::Mat4& view, const geometry::Mat4& projection,
+                         const SceneRenderStyle& style) const {
     const GpuMesh& mesh = meshes_.at(mesh_id);
     const auto model_data = to_opengl_column_major(model);
     const auto view_data = to_opengl_column_major(view);
@@ -145,13 +154,31 @@ void Renderer::draw(std::size_t mesh_id, const geometry::Mat4& model,
     glUniformMatrix4fv(model_location_, 1, GL_FALSE, model_data.data());
     glUniformMatrix4fv(view_location_, 1, GL_FALSE, view_data.data());
     glUniformMatrix4fv(projection_location_, 1, GL_FALSE, projection_data.data());
-    glUniform3fv(color_location_, 1, color.data());
+    glUniform3fv(color_location_, 1, style.color.data());
 
-    glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
+    glPolygonMode(GL_FRONT_AND_BACK, style.wireframe ? GL_LINE : GL_FILL);
     glBindVertexArray(mesh.vao);
     glDrawElements(GL_TRIANGLES, mesh.index_count, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+void Renderer::draw_scene(const scene::Scene& scene,
+                          const std::vector<std::size_t>& mesh_ids,
+                          const std::vector<SceneRenderStyle>& styles,
+                          const geometry::Mat4& view,
+                          const geometry::Mat4& projection) const {
+    if (mesh_ids.size() != scene.size() || styles.size() != scene.size()) {
+        throw std::invalid_argument("Scene render data must match the Scene object count");
+    }
+
+    for (std::size_t index = 0; index < scene.size(); ++index) {
+        const scene::SceneObject& object = scene.objects()[index];
+        if (!object.visible()) {
+            continue;
+        }
+        draw_mesh(mesh_ids[index], object.transform().matrix(), view, projection, styles[index]);
+    }
 }
 
 }  // namespace viewer

@@ -4,6 +4,20 @@
 
 The core currently provides header-only `Vec2` and `Vec3` types. Tests use CTest without an external testing dependency.
 
+## Architecture
+
+The project is organized as three one-way layers:
+
+```text
+Viewer -> Scene -> Geometry Kernel
+```
+
+- **Geometry Kernel** provides mathematics and geometry, with no graphics or scene concepts.
+- **Scene** owns named objects, local meshes, transforms, and visibility; it has no OpenGL dependency.
+- **Viewer** provides OpenGL visualization and interaction over Scene objects.
+
+Application-specific systems such as chess belong above these reusable layers, not inside the kernel or Scene module.
+
 ## Build
 
 ```sh
