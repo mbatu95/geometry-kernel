@@ -5,6 +5,8 @@ project(geometry-kernel
     LANGUAGES CXX
 )
 
+option(GEOMETRY_KERNEL_BUILD_VIEWER "Build the OpenGL geometry viewer" ON)
+
 add_library(geometry_kernel INTERFACE)
 add_library(geometry::geometry_kernel ALIAS geometry_kernel)
 
@@ -75,4 +77,42 @@ if(BUILD_TESTING)
     add_executable(geometry_kernel_primitive_tests tests/test_primitives.cpp)
     target_link_libraries(geometry_kernel_primitive_tests PRIVATE geometry::geometry_kernel)
     add_test(NAME geometry_kernel_primitive_tests COMMAND geometry_kernel_primitive_tests)
+endif()
+
+if(GEOMETRY_KERNEL_BUILD_VIEWER)
+    find_package(OpenGL REQUIRED)
+    find_package(glfw3 3.3 CONFIG REQUIRED)
+
+    if(TARGET glfw)
+        set(GEOMETRY_KERNEL_GLFW_TARGET glfw)
+    elseif(TARGET glfw3::glfw)
+        set(GEOMETRY_KERNEL_GLFW_TARGET glfw3::glfw)
+    else()
+        message(FATAL_ERROR "glfw3 was found but did not define a supported CMake target")
+    endif()
+
+    add_executable(geometry_viewer
+        viewer/main.cpp
+        viewer/camera.cpp
+        viewer/renderer.cpp
+        viewer/shader.cpp
+    )
+    target_include_directories(geometry_viewer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(geometry_viewer PRIVATE
+        geometry::geometry_kernel
+        ${GEOMETRY_KERNEL_GLFW_TARGET}
+        OpenGL::GL
+    )
+    target_compile_definitions(geometry_viewer PRIVATE
+        GEOMETRY_VIEWER_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/viewer/shaders"
+    )
+    if(APPLE)
+        target_compile_definitions(geometry_viewer PRIVATE GL_SILENCE_DEPRECATION)
+    endif()
+
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/viewer/shaders")
+    configure_file(viewer/shaders/basic.vert
+        "${CMAKE_CURRENT_BINARY_DIR}/viewer/shaders/basic.vert" COPYONLY)
+    configure_file(viewer/shaders/basic.frag
+        "${CMAKE_CURRENT_BINARY_DIR}/viewer/shaders/basic.frag" COPYONLY)
 endif()
