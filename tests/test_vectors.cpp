@@ -1,7 +1,10 @@
 #include "geometry/vec2.hpp"
 #include "geometry/vec3.hpp"
+#include "geometry/point2.hpp"
+#include "geometry/point3.hpp"
 
 #include <cmath>
+#include <concepts>
 #include <iostream>
 #include <string_view>
 
@@ -18,6 +21,73 @@ void check(bool condition, std::string_view description) {
 
 bool near(double actual, double expected) {
     return std::abs(actual - expected) <= 1e-9;
+}
+
+template <typename T>
+concept AddableToSelf = requires(T lhs, T rhs) { lhs + rhs; };
+
+template <typename T>
+concept MultipliableByScalar = requires(T value) { value * 2.0; };
+
+template <typename T>
+concept DivisibleByScalar = requires(T value) { value / 2.0; };
+
+static_assert(!AddableToSelf<geometry::Point2>);
+static_assert(!AddableToSelf<geometry::Point3>);
+static_assert(!MultipliableByScalar<geometry::Point2>);
+static_assert(!MultipliableByScalar<geometry::Point3>);
+static_assert(!DivisibleByScalar<geometry::Point2>);
+static_assert(!DivisibleByScalar<geometry::Point3>);
+
+void test_point2() {
+    using geometry::Point2;
+    using geometry::Vec2;
+
+    const Point2 origin;
+    const Point2 start{1.0, 2.0};
+    const Point2 end{4.0, 6.0};
+    const Vec2 displacement = end - start;
+
+    check(origin == Point2{0.0, 0.0}, "Point2 default construction");
+    check(start.x == 1.0 && start.y == 2.0, "Point2 value construction");
+    check(displacement == Vec2{3.0, 4.0}, "Point2 subtraction produces Vec2");
+    check(start + displacement == end, "Point2 plus Vec2");
+    check(end - displacement == start, "Point2 minus Vec2");
+    check(geometry::distance_squared(start, end) == 25.0, "Point2 squared distance");
+    check(near(geometry::distance(start, end), 5.0), "Point2 distance");
+    check(start == Point2{1.0, 2.0}, "Point2 equality");
+    check(start != end, "Point2 inequality");
+
+    Point2 translated = start;
+    translated += displacement;
+    translated -= Vec2{1.0, 2.0};
+    check(translated == Point2{3.0, 4.0}, "Point2 compound translations");
+}
+
+void test_point3() {
+    using geometry::Point3;
+    using geometry::Vec3;
+
+    const Point3 origin;
+    const Point3 start{1.0, 2.0, 3.0};
+    const Point3 end{4.0, 6.0, 3.0};
+    const Vec3 displacement = end - start;
+
+    check(origin == Point3{0.0, 0.0, 0.0}, "Point3 default construction");
+    check(start.x == 1.0 && start.y == 2.0 && start.z == 3.0,
+          "Point3 value construction");
+    check(displacement == Vec3{3.0, 4.0, 0.0}, "Point3 subtraction produces Vec3");
+    check(start + displacement == end, "Point3 plus Vec3");
+    check(end - displacement == start, "Point3 minus Vec3");
+    check(geometry::distance_squared(start, end) == 25.0, "Point3 squared distance");
+    check(near(geometry::distance(start, end), 5.0), "Point3 distance");
+    check(start == Point3{1.0, 2.0, 3.0}, "Point3 equality");
+    check(start != end, "Point3 inequality");
+
+    Point3 translated = start;
+    translated += displacement;
+    translated -= Vec3{1.0, 2.0, 3.0};
+    check(translated == Point3{3.0, 4.0, 0.0}, "Point3 compound translations");
 }
 
 void test_vec2() {
@@ -107,5 +177,7 @@ void test_vec3() {
 int main() {
     test_vec2();
     test_vec3();
+    test_point2();
+    test_point3();
     return failures == 0 ? 0 : 1;
 }
