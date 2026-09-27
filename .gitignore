@@ -1,5 +1,6 @@
 # CMake build output
 /build/
+/build-*/
 /cmake-build-*/
 CMakeFiles/
 CMakeCache.txt
@@ -18,7 +19,7 @@ CMakeUserPresets.json
 *.so
 *.dll
 *.exe
+*.dSYM/
 
 # macOS
 .DS_Store
-*.dSYM/

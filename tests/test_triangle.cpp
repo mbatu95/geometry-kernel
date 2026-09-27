@@ -45,15 +45,32 @@ void test_triangle() {
     check(near(triangle.normal(), Vec3{0.0, 0.0, 1.0}), "Triangle normalized normal");
     check(near(triangle.area(), 2.0), "Triangle area");
 
-    bool degenerate_threw = false;
+    const Triangle small_triangle{Point3{0.0, 0.0, 0.0},
+                                  Point3{1e-8, 0.0, 0.0},
+                                  Point3{0.0, 1e-8, 0.0}};
+    check(small_triangle.area() > 0.0, "Small valid Triangle has positive area");
+    check(near(small_triangle.normal(), Vec3{0.0, 0.0, 1.0}),
+          "Small valid Triangle has a normalized normal");
+
+    bool duplicate_point_threw = false;
     try {
         static_cast<void>(Triangle{Point3{0.0, 0.0, 0.0},
-                                   Point3{1.0, 0.0, 0.0},
-                                   Point3{0.0, 1e-14, 0.0}});
+                                   Point3{0.0, 0.0, 0.0},
+                                   Point3{0.0, 1.0, 0.0}});
     } catch (const std::invalid_argument&) {
-        degenerate_threw = true;
+        duplicate_point_threw = true;
     }
-    check(degenerate_threw, "Triangle rejects near-zero area");
+    check(duplicate_point_threw, "Triangle rejects duplicate points");
+
+    bool collinear_threw = false;
+    try {
+        static_cast<void>(Triangle{Point3{0.0, 0.0, 0.0},
+                                   Point3{1.0, 1.0, 1.0},
+                                   Point3{2.0, 2.0, 2.0}});
+    } catch (const std::invalid_argument&) {
+        collinear_threw = true;
+    }
+    check(collinear_threw, "Triangle rejects exactly collinear points");
 }
 
 void test_interior_hit() {

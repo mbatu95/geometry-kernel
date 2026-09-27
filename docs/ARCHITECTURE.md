@@ -29,7 +29,7 @@ geometry_kernel
 - `geometry_viewer` depends on Scene and the kernel, as well as GLFW and OpenGL.
 - Applications can depend on the reusable layers without requiring the viewer.
 
-The CMake `GEOMETRY_KERNEL_BUILD_VIEWER` option controls whether viewer dependencies are discovered and the `geometry_viewer` target is built. The `geometry_scene` target remains available when the viewer is disabled.
+The CMake `GEOMETRY_KERNEL_BUILD_VIEWER` option controls whether viewer dependencies are discovered and the `geometry_viewer` target is built. It defaults to on for a top-level checkout and off when included as a subproject; callers can explicitly set either value. The `geometry_scene` target remains available when the viewer is disabled.
 
 ## Geometry Kernel
 

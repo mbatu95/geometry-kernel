@@ -97,6 +97,9 @@ void test_xy_plane() {
         check(near(vertex.z, 0.0), "XY plane vertices lie at z zero");
     }
     check_positive_z_normals(plane, "XY plane normals point toward +Z");
+        const Mesh small_plane = make_xy_plane(1e-8, 1e-8);
+        check(small_plane.triangle_count() == 2 && small_plane.triangle(0).area() > 0.0,
+            "XY plane generation accepts small dimensions");
     const auto hit = intersect(
         Ray{Point3{0.5, 0.5, 2.0}, Vec3{0.0, 0.0, -1.0}}, plane);
     check(hit && near(hit->point, Point3{0.5, 0.5, 0.0}), "Ray from above hits XY plane");

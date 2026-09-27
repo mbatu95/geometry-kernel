@@ -75,11 +75,13 @@ See [Architecture](docs/ARCHITECTURE.md), [Geometry Conventions](docs/GEOMETRY.m
 
 - C++20 and minimal external dependencies
 - Double-precision geometry, independent of rendering
+- Unit-agnostic coordinates; applications are responsible for choosing consistent units
 - Explicit Point versus Vector semantics
 - Indexed triangle meshes and simple value-oriented types
 - Row-major matrix storage with a column-vector mathematical convention
 - Affine transforms distinguish points from vectors
 - Ray directions need not be normalized
+- Numerical tolerances are algorithm-specific; there is no universal global epsilon
 - No polymorphic geometry hierarchy
 
 ## Repository Structure
@@ -106,6 +108,7 @@ brew install cmake glfw
 ```
 
 The viewer requests an OpenGL 3.3 Core context. Other platforms need compatible OpenGL and GLFW development packages discoverable by CMake.
+The viewer defaults to enabled for a top-level checkout and disabled when this project is included as a CMake subproject. `GEOMETRY_KERNEL_BUILD_VIEWER` can explicitly override either default.
 
 ## Build
 

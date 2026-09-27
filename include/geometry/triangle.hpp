@@ -11,14 +11,12 @@ class Triangle {
 public:
     Triangle(Point3 a, Point3 b, Point3 c) : a_{a}, b_{b}, c_{c} {
         const Vec3 area_vector = cross(edge_ab(), edge_ac());
-        area_ = 0.5 * area_vector.length();
-
-        // Reject triangles with an area no greater than this absolute threshold.
-        constexpr double minimum_area = 1e-12;
-        if (area_ <= minimum_area) {
-            throw std::invalid_argument("Triangle area must be greater than 1e-12");
+        const double twice_area = area_vector.length();
+        if (twice_area == 0.0) {
+            throw std::invalid_argument("Triangle vertices must not be collinear");
         }
-        normal_ = area_vector.normalized();
+        area_ = 0.5 * twice_area;
+        normal_ = area_vector / twice_area;
     }
 
     [[nodiscard]] const Point3& a() const noexcept {

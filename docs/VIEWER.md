@@ -13,6 +13,7 @@ brew install cmake glfw
 ```
 
 The geometry kernel and Scene module do not depend on either graphics package.
+The viewer defaults to enabled when this repository is configured as the top-level project, but defaults to disabled when included by another CMake project. Set `GEOMETRY_KERNEL_BUILD_VIEWER` explicitly to override the default. This keeps downstream kernel/Scene configuration free of viewer dependencies unless requested.
 
 ## Build and Run
 

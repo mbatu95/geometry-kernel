@@ -5,7 +5,16 @@ project(geometry-kernel
     LANGUAGES CXX
 )
 
-option(GEOMETRY_KERNEL_BUILD_VIEWER "Build the OpenGL geometry viewer" ON)
+if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    set(GEOMETRY_KERNEL_BUILD_VIEWER_DEFAULT ON)
+else()
+    set(GEOMETRY_KERNEL_BUILD_VIEWER_DEFAULT OFF)
+endif()
+option(GEOMETRY_KERNEL_BUILD_VIEWER
+    "Build the OpenGL viewer (defaults off when included as a subproject)"
+    ${GEOMETRY_KERNEL_BUILD_VIEWER_DEFAULT}
+)
+unset(GEOMETRY_KERNEL_BUILD_VIEWER_DEFAULT)
 
 add_library(geometry_kernel INTERFACE)
 add_library(geometry::geometry_kernel ALIAS geometry_kernel)

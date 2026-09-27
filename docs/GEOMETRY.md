@@ -2,7 +2,9 @@
 
 [Back to the project README](../README.md)
 
-This guide records the conventions used by the current implementation. The kernel does not impose a unit system.
+This guide records the conventions used by the current implementation. The kernel is unit-agnostic: coordinates have no built-in physical unit, and applications are responsible for choosing consistent units across their data.
+
+Numerical tolerances are local to algorithms that need them. There is intentionally no universal global epsilon, and the kernel does not claim industrial-grade numerical robustness.
 
 ## Coordinate System
 
@@ -44,7 +46,9 @@ The direction is not automatically normalized. Therefore `t` is a parameter alon
 
 ## Triangle
 
-Triangle orientation follows vertex order: its normal is computed from `(b - a) × (c - a)`. Reversing the winding reverses the normal. The ray-triangle result reports barycentric coordinates with `A = 1 - u - v`, `B = u`, and `C = v`. The ray-triangle query accepts hits from either side; it does not cull back faces.
+Triangle orientation follows vertex order: its normal is computed from `(b - a) × (c - a)`. Reversing the winding reverses the normal. Construction rejects a triangle only when the computed cross-product magnitude is exactly zero; it does not use a minimum area in physical units. The ray-triangle result reports barycentric coordinates with `A = 1 - u - v`, `B = u`, and `C = v`. The ray-triangle query accepts hits from either side; it does not cull back faces.
+
+This exact-zero test is limited by floating-point arithmetic: extremely small products can underflow, and nearly collinear points can be affected by rounding. Ray-triangle parallelism and barycentric checks use their own algorithm-specific tolerances; those tolerances do not define construction validity.
 
 ## AABB
 

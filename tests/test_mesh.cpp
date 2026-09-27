@@ -48,6 +48,13 @@ void test_construction_and_access() {
               mesh.triangle_indices()[0] == TriangleIndices{0, 1, 2},
           "Mesh read-only triangle-index access");
 
+    const Mesh small_mesh{
+        {Point3{0.0, 0.0, 0.0}, Point3{1e-8, 0.0, 0.0}, Point3{0.0, 1e-8, 0.0}},
+        {TriangleIndices{0, 1, 2}},
+    };
+    check(small_mesh.triangle_count() == 1 && small_mesh.triangle(0).area() > 0.0,
+          "Mesh accepts a valid small triangle");
+
     const Triangle triangle = mesh.triangle(0);
     check(triangle.a() == Point3{0.0, 0.0, 0.0} &&
               triangle.b() == Point3{1.0, 0.0, 0.0} &&
