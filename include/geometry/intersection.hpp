@@ -1,11 +1,13 @@
 #pragma once
 
 #include "geometry/aabb.hpp"
+#include "geometry/mesh.hpp"
 #include "geometry/plane.hpp"
 #include "geometry/ray.hpp"
 #include "geometry/triangle.hpp"
 
 #include <cmath>
+#include <cstddef>
 #include <limits>
 #include <optional>
 
@@ -31,6 +33,14 @@ struct RayAABBIntersection {
     double t_exit;
     Point3 enter_point;
     Point3 exit_point;
+};
+
+struct RayMeshIntersection {
+    double t;
+    Point3 point;
+    std::size_t triangle_index;
+    double u;
+    double v;
 };
 
 [[nodiscard]] inline std::optional<RayAABBIntersection> intersect(
@@ -140,6 +150,27 @@ struct RayAABBIntersection {
     }
 
     return RayTriangleIntersection{t, ray.point_at(t), u, v};
+}
+
+[[nodiscard]] inline std::optional<RayMeshIntersection> intersect(
+    const Ray& ray, const Mesh& mesh) {
+    if (mesh.triangle_count() == 0) {
+        return std::nullopt;
+    }
+
+    const std::optional<AABB> bounds = mesh.bounding_box();
+    if (!bounds || !intersect(ray, *bounds)) {
+        return std::nullopt;
+    }
+
+    std::optional<RayMeshIntersection> closest;
+    for (std::size_t index = 0; index < mesh.triangle_count(); ++index) {
+        const std::optional<RayTriangleIntersection> hit = intersect(ray, mesh.triangle(index));
+        if (hit && (!closest || hit->t < closest->t)) {
+            closest = RayMeshIntersection{hit->t, hit->point, index, hit->u, hit->v};
+        }
+    }
+    return closest;
 }
 
 }  // namespace geometry
