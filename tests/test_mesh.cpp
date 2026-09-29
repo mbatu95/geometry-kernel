@@ -177,6 +177,31 @@ geometry::Mesh make_tetrahedron() {
     };
 }
 
+geometry::Mesh make_unit_cube() {
+    using namespace geometry;
+    // A closed, watertight unit cube spanning [0,1]^3 with outward-facing windings.
+    const std::vector<Point3> vertices{
+        Point3{0.0, 0.0, 0.0}, Point3{1.0, 0.0, 0.0}, Point3{1.0, 1.0, 0.0},
+        Point3{0.0, 1.0, 0.0}, Point3{0.0, 0.0, 1.0}, Point3{1.0, 0.0, 1.0},
+        Point3{1.0, 1.0, 1.0}, Point3{0.0, 1.0, 1.0},
+    };
+    const std::vector<TriangleIndices> triangles{
+        // -z face
+        TriangleIndices{0, 2, 1}, TriangleIndices{0, 3, 2},
+        // +z face
+        TriangleIndices{4, 5, 6}, TriangleIndices{4, 6, 7},
+        // -y face
+        TriangleIndices{0, 1, 5}, TriangleIndices{0, 5, 4},
+        // +y face
+        TriangleIndices{3, 7, 6}, TriangleIndices{3, 6, 2},
+        // -x face
+        TriangleIndices{0, 4, 7}, TriangleIndices{0, 7, 3},
+        // +x face
+        TriangleIndices{1, 2, 6}, TriangleIndices{1, 6, 5},
+    };
+    return Mesh{vertices, triangles};
+}
+
 void test_compute_aabb_free_function() {
     using namespace geometry;
 
@@ -196,6 +221,12 @@ void test_compute_aabb_free_function() {
               mesh_bounds->min() == mesh.bounding_box()->min() &&
               mesh_bounds->max() == mesh.bounding_box()->max(),
           "compute_aabb(mesh) matches member function");
+
+    const Mesh cube = make_unit_cube();
+    const std::optional<AABB> cube_bounds = compute_aabb(cube);
+    check(cube_bounds.has_value() && cube_bounds->min() == Point3{0.0, 0.0, 0.0} &&
+              cube_bounds->max() == Point3{1.0, 1.0, 1.0},
+          "compute_aabb on a unit cube matches its known extent");
 }
 
 void test_compute_face_normals_free_function() {
@@ -228,6 +259,22 @@ void test_compute_face_normals_free_function() {
     check(degenerate_normals.size() == 1 && degenerate_normals[0].x == 0.0 &&
               degenerate_normals[0].y == 0.0 && degenerate_normals[0].z == 0.0,
           "compute_face_normals gives a zero normal for a degenerate triangle");
+
+    // All normalized normals on a unit cube should have unit length and point
+    // outward along a single axis.
+    const Mesh cube = make_unit_cube();
+    const std::vector<Vec3> cube_normals = compute_face_normals(cube);
+    check(cube_normals.size() == cube.triangle_count(),
+          "compute_face_normals returns one normal per cube triangle");
+    bool all_unit_length = true;
+    for (const Vec3& normal : cube_normals) {
+        if (!near(normal.length(), 1.0)) {
+            all_unit_length = false;
+        }
+    }
+    check(all_unit_length, "compute_face_normals on a unit cube are normalized");
+    check(near(cube_normals[0].z, -1.0), "compute_face_normals -z cube face points down");
+    check(near(cube_normals[2].z, 1.0), "compute_face_normals +z cube face points up");
 }
 
 void test_has_degenerate_triangles_free_function() {
@@ -263,6 +310,9 @@ void test_is_watertight_free_function() {
 
     const Mesh tetrahedron = make_tetrahedron();
     check(is_watertight(tetrahedron), "A closed tetrahedron is watertight");
+
+    const Mesh cube = make_unit_cube();
+    check(is_watertight(cube), "A closed unit cube is watertight");
 
     // Adding a third triangle on the shared edge {0,1} makes it non-manifold
     // (shared by three triangles instead of two), so the mesh is not watertight.
