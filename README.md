@@ -191,6 +191,30 @@ bool degenerate = geometry::has_degenerate_triangles(mesh);
 bool watertight = geometry::is_watertight(mesh);
 ```
 
+## Binary STL Export
+
+`geometry::io::write_binary_stl` (`include/geometry/io/stl_writer.hpp`) exports a `Mesh` to a binary (not ASCII) STL file. Like the rest of `geometry_kernel`, this feature is header-only and requires no external dependencies.
+
+```cpp
+#include <geometry/io/stl_writer.hpp>
+#include <geometry/mesh.hpp>
+
+using geometry::Mesh;
+using geometry::Point3;
+using geometry::TriangleIndex;
+
+std::vector<Point3> vertices{
+	Point3{0.0, 0.0, 0.0},
+	Point3{1.0, 0.0, 0.0},
+	Point3{0.0, 1.0, 0.0},
+};
+std::vector<TriangleIndex> triangles{TriangleIndex{0, 1, 2}};
+
+Mesh mesh{vertices, triangles};
+
+geometry::io::write_binary_stl(mesh, "mesh.stl");
+```
+
 ## Roadmap
 
 Possible future areas include additional procedural primitives, mesh attributes such as normals and UVs, spatial acceleration structures, more geometric queries, import/export, and improved viewer tooling. These are not currently implemented.
