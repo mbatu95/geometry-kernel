@@ -58,6 +58,9 @@ target_link_libraries(mesh_example PRIVATE geometry::geometry_kernel)
 add_executable(primitives_example examples/primitives_example.cpp)
 target_link_libraries(primitives_example PRIVATE geometry::geometry_kernel)
 
+add_executable(stl_export_example examples/stl_export_example.cpp)
+target_link_libraries(stl_export_example PRIVATE geometry::geometry_kernel)
+
 if(BUILD_TESTING)
     add_executable(geometry_kernel_tests tests/test_vectors.cpp)
     target_link_libraries(geometry_kernel_tests PRIVATE geometry::geometry_kernel)
@@ -94,6 +97,10 @@ if(BUILD_TESTING)
     add_executable(geometry_scene_tests tests/test_scene.cpp)
     target_link_libraries(geometry_scene_tests PRIVATE scene::scene)
     add_test(NAME geometry_scene_tests COMMAND geometry_scene_tests)
+
+    add_executable(geometry_kernel_stl_writer_tests tests/test_stl_writer.cpp)
+    target_link_libraries(geometry_kernel_stl_writer_tests PRIVATE geometry::geometry_kernel)
+    add_test(NAME geometry_kernel_stl_writer_tests COMMAND geometry_kernel_stl_writer_tests)
 endif()
 
 if(GEOMETRY_KERNEL_BUILD_VIEWER)
