@@ -49,6 +49,58 @@ Mesh-related code already exists and follows the established conventions:
 - Tests: `tests/test_mesh.cpp`, `tests/test_primitives.cpp`,
   `tests/test_scene.cpp`; example: `examples/mesh_example.cpp`.
 
+## Mesh Class API Reference
+
+Exact public surface of `geometry::Mesh` (`include/geometry/mesh.hpp`), to be
+used as-is by later tasks without breaking the header-only interface target:
+
+```cpp
+geometry::Mesh mesh{vertices, triangle_indices};
+
+// Vertex positions (Point3 has .x/.y/.z, double precision).
+const std::vector<geometry::Point3>& verts = mesh.vertices();
+std::size_t vcount = mesh.vertex_count();
+
+// Indexed triangles: TriangleIndices{a, b, c} are indices into vertices().
+const std::vector<geometry::TriangleIndices>& idx = mesh.triangle_indices();
+std::size_t tcount = mesh.triangle_count();
+
+// Iterate triangles by index, get a materialized Triangle (positions only,
+// no stored per-vertex normal):
+for (std::size_t i = 0; i < mesh.triangle_count(); ++i) {
+    geometry::Triangle tri = mesh.triangle(i);   // throws std::out_of_range if i is bad
+    const geometry::Point3& a = tri.a();
+    const geometry::Point3& b = tri.b();
+    const geometry::Point3& c = tri.c();
+    geometry::Vec3 face_normal = tri.normal();   // per-triangle (flat) normal, unit length
+}
+
+// Bulk face-normal computation (one Vec3 per triangle, same order as
+// triangle_indices()/triangle(i)); degenerate/out-of-range entries yield {0,0,0}:
+std::vector<geometry::Vec3> normals = geometry::compute_face_normals(mesh);
+
+// Other queries: mesh.bounding_box() -> std::optional<AABB> (nullopt if empty),
+// mesh.transformed(transform) -> new Mesh with vertices transformed,
+// geometry::has_degenerate_triangles(mesh) -> bool,
+// geometry::is_watertight(mesh.triangle_indices()) -> bool.
+```
+
+Notes for implementers:
+
+- `Mesh` has **no per-vertex normals** — only flat per-triangle normals via
+  `Triangle::normal()` or `compute_face_normals`. Any smoothed/vertex-normal
+  feature must be added as new free functions/methods, not by changing
+  `TriangleIndices` or the constructor signature.
+- `Mesh::triangle(index)` reconstructs a `Triangle` on every call (no
+  caching); prefer looping by index once and reusing the result rather than
+  calling it repeatedly for the same index in hot paths.
+- All indices in `TriangleIndices` are validated against `vertices().size()`
+  at construction time, so any `Mesh` instance in hand is already
+  index-safe; out-of-range checks are only needed when working with raw
+  `std::vector<Point3>`/`std::vector<TriangleIndices>` pairs directly (as
+  `compute_face_normals`/`has_degenerate_triangles` free-function overloads
+  do).
+
 ## Conventions for New Mesh-Related Code
 
 1. Keep new geometry types header-only under `include/geometry/`, using
