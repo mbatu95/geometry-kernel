@@ -160,6 +160,125 @@ void test_ray_mesh_intersections() {
           "Closest Mesh hit details");
 }
 
+geometry::Mesh make_tetrahedron() {
+    using namespace geometry;
+    // A closed, watertight tetrahedron with outward-facing windings.
+    return Mesh{
+        {
+            Point3{0.0, 0.0, 0.0}, Point3{1.0, 0.0, 0.0},
+            Point3{0.0, 1.0, 0.0}, Point3{0.0, 0.0, 1.0},
+        },
+        {
+            TriangleIndices{0, 2, 1},
+            TriangleIndices{0, 1, 3},
+            TriangleIndices{0, 3, 2},
+            TriangleIndices{1, 2, 3},
+        },
+    };
+}
+
+void test_compute_aabb_free_function() {
+    using namespace geometry;
+
+    const std::vector<Point3> empty_vertices;
+    check(!compute_aabb(empty_vertices), "compute_aabb on empty vertex list is nullopt");
+
+    const std::vector<Point3> vertices{
+        Point3{-1.0, 2.0, 3.0}, Point3{4.0, -2.0, 1.0}, Point3{0.0, 1.0, 5.0}};
+    const std::optional<AABB> bounds = compute_aabb(vertices);
+    check(bounds.has_value() && bounds->min() == Point3{-1.0, -2.0, 1.0} &&
+              bounds->max() == Point3{4.0, 2.0, 5.0},
+          "compute_aabb(vertices) matches Mesh::bounding_box()");
+
+    const Mesh mesh{vertices, {TriangleIndices{0, 1, 2}}};
+    const std::optional<AABB> mesh_bounds = compute_aabb(mesh);
+    check(mesh_bounds.has_value() && mesh.bounding_box().has_value() &&
+              mesh_bounds->min() == mesh.bounding_box()->min() &&
+              mesh_bounds->max() == mesh.bounding_box()->max(),
+          "compute_aabb(mesh) matches member function");
+}
+
+void test_compute_face_normals_free_function() {
+    using namespace geometry;
+
+    const Mesh mesh = make_single_triangle();
+    const std::vector<Vec3> normals = compute_face_normals(mesh.vertices(), mesh.triangle_indices());
+    check(normals.size() == 1, "compute_face_normals returns one normal per triangle");
+    check(near(normals[0].x, 0.0) && near(normals[0].y, 0.0) && near(normals[0].z, 1.0),
+          "compute_face_normals gives the correct outward normal");
+
+    const std::vector<Vec3> mesh_normals = compute_face_normals(mesh);
+    check(mesh_normals.size() == 1 && near(mesh_normals[0].x, normals[0].x) &&
+              near(mesh_normals[0].y, normals[0].y) && near(mesh_normals[0].z, normals[0].z),
+          "compute_face_normals(mesh) matches vertex/index overload");
+
+    // Out-of-range indices produce a zero normal rather than throwing.
+    const std::vector<Point3> vertices{Point3{0.0, 0.0, 0.0}, Point3{1.0, 0.0, 0.0}};
+    const std::vector<TriangleIndices> bad_indices{TriangleIndices{0, 1, 5}};
+    const std::vector<Vec3> bad_normals = compute_face_normals(vertices, bad_indices);
+    check(bad_normals.size() == 1 && bad_normals[0].x == 0.0 && bad_normals[0].y == 0.0 &&
+              bad_normals[0].z == 0.0,
+          "compute_face_normals gives a zero normal for out-of-range indices");
+
+    // Zero-area (collinear) triangle also produces a zero normal.
+    const std::vector<Point3> collinear{
+        Point3{0.0, 0.0, 0.0}, Point3{1.0, 0.0, 0.0}, Point3{2.0, 0.0, 0.0}};
+    const std::vector<Vec3> degenerate_normals =
+        compute_face_normals(collinear, {TriangleIndices{0, 1, 2}});
+    check(degenerate_normals.size() == 1 && degenerate_normals[0].x == 0.0 &&
+              degenerate_normals[0].y == 0.0 && degenerate_normals[0].z == 0.0,
+          "compute_face_normals gives a zero normal for a degenerate triangle");
+}
+
+void test_has_degenerate_triangles_free_function() {
+    using namespace geometry;
+
+    const std::vector<Point3> vertices{
+        Point3{0.0, 0.0, 0.0}, Point3{1.0, 0.0, 0.0}, Point3{0.0, 1.0, 0.0}};
+    check(!has_degenerate_triangles(vertices, {TriangleIndices{0, 1, 2}}),
+          "A valid triangle is not degenerate");
+    check(has_degenerate_triangles(vertices, {TriangleIndices{0, 1, 5}}),
+          "An out-of-range index is reported as degenerate");
+
+    const std::vector<Point3> collinear{
+        Point3{0.0, 0.0, 0.0}, Point3{1.0, 0.0, 0.0}, Point3{2.0, 0.0, 0.0}};
+    check(has_degenerate_triangles(collinear, {TriangleIndices{0, 1, 2}}),
+          "A zero-area (collinear) triangle is reported as degenerate");
+
+    check(!has_degenerate_triangles(std::vector<Point3>{}, std::vector<TriangleIndices>{}),
+          "An empty triangle list has no degenerate triangles");
+
+    const Mesh mesh = make_single_triangle();
+    check(!has_degenerate_triangles(mesh), "has_degenerate_triangles(mesh) matches free function");
+}
+
+void test_is_watertight_free_function() {
+    using namespace geometry;
+
+    check(is_watertight(std::vector<TriangleIndices>{}),
+          "An empty triangle list is vacuously watertight");
+
+    const Mesh open_triangle = make_single_triangle();
+    check(!is_watertight(open_triangle), "A single open triangle is not watertight");
+
+    const Mesh tetrahedron = make_tetrahedron();
+    check(is_watertight(tetrahedron), "A closed tetrahedron is watertight");
+
+    // Adding a third triangle on the shared edge {0,1} makes it non-manifold
+    // (shared by three triangles instead of two), so the mesh is not watertight.
+    const Mesh non_manifold{
+        tetrahedron.vertices(),
+        {
+            TriangleIndices{0, 2, 1},
+            TriangleIndices{0, 1, 3},
+            TriangleIndices{0, 3, 2},
+            TriangleIndices{1, 2, 3},
+            TriangleIndices{0, 1, 2},
+        },
+    };
+    check(!is_watertight(non_manifold), "A non-manifold edge (shared by 3 triangles) fails watertight");
+}
+
 }  // namespace
 
 int main() {
@@ -167,5 +286,9 @@ int main() {
     test_empty_mesh_and_bounds();
     test_transformed_mesh();
     test_ray_mesh_intersections();
+    test_compute_aabb_free_function();
+    test_compute_face_normals_free_function();
+    test_has_degenerate_triangles_free_function();
+    test_is_watertight_free_function();
     return failures == 0 ? 0 : 1;
 }
