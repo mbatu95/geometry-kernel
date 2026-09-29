@@ -94,6 +94,10 @@ if(BUILD_TESTING)
     add_executable(geometry_scene_tests tests/test_scene.cpp)
     target_link_libraries(geometry_scene_tests PRIVATE scene::scene)
     add_test(NAME geometry_scene_tests COMMAND geometry_scene_tests)
+
+    add_executable(geometry_kernel_stl_writer_tests tests/test_stl_writer.cpp)
+    target_link_libraries(geometry_kernel_stl_writer_tests PRIVATE geometry::geometry_kernel)
+    add_test(NAME geometry_kernel_stl_writer_tests COMMAND geometry_kernel_stl_writer_tests)
 endif()
 
 if(GEOMETRY_KERNEL_BUILD_VIEWER)
