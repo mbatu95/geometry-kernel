@@ -18,6 +18,15 @@ The project is early-stage and is being prepared for its first `v0.1.0` release.
 - Axis-aligned bounding box (`AABB`)
 - Indexed triangle `Mesh`
 
+### Mesh Foundation
+
+- `TriangleIndex` (alias of `TriangleIndices`): a triangle as three vertex indices `a`, `b`, `c`
+- `Mesh`: an indexed triangle mesh over `std::vector<Point3>` vertices and `std::vector<TriangleIndices>` triangles; empty meshes are valid and their `bounding_box()` is `std::nullopt`
+- `compute_aabb()`: axis-aligned bounding box over raw vertices or a `Mesh`
+- `compute_face_normals()`: per-triangle unit normals from raw vertices/indices or a `Mesh`; degenerate or out-of-range triangles yield a zero normal rather than throwing
+- `has_degenerate_triangles()`: detects triangles with out-of-range vertex indices or zero area
+- `is_watertight()`: checks that every undirected edge is shared by exactly two triangles
+
 ### Intersection Queries
 
 - Ray / Plane
@@ -156,6 +165,30 @@ The current demo displays a procedural XY grid and a box. Use left mouse drag to
 auto box = geometry::make_box(1.0, 1.0, 1.0);
 auto moved = box.transformed(
 	geometry::Transform::translation(0.0, 0.0, 2.0));
+```
+
+## Mesh Foundation Usage Example
+
+```cpp
+#include <geometry/mesh.hpp>
+
+using geometry::Mesh;
+using geometry::Point3;
+using geometry::TriangleIndex;
+
+std::vector<Point3> vertices{
+	Point3{0.0, 0.0, 0.0},
+	Point3{1.0, 0.0, 0.0},
+	Point3{0.0, 1.0, 0.0},
+};
+std::vector<TriangleIndex> triangles{TriangleIndex{0, 1, 2}};
+
+Mesh mesh{vertices, triangles};
+
+auto bounds = geometry::compute_aabb(mesh);
+auto normals = geometry::compute_face_normals(mesh);
+bool degenerate = geometry::has_degenerate_triangles(mesh);
+bool watertight = geometry::is_watertight(mesh);
 ```
 
 ## Roadmap
